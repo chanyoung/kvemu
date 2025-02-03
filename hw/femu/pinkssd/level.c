@@ -171,8 +171,7 @@ keyset* find_keyset(char *data, kv_key lpa) {
         if (res == 0) {
             keyset *res = (keyset *) malloc (sizeof(keyset));
             memcpy(&res->ppa, &body[bitmap[mid]], sizeof(struct femu_ppa));
-            res->lpa.k.key = target.key;
-            res->lpa.k.len = target.len;
+            kv_copy_key(&res->lpa.k, &target);
             res->lpa.line_age.age = vbitmap[mid];
             return res;
         } else if(res < 0) {

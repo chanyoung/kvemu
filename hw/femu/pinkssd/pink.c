@@ -146,7 +146,7 @@ static uint16_t pink_io_cmd(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
             req->key_length = key_length;
             req->key_buf[key_length+1] = 0;
             req->value_length = value_length;
-            g_free(value);
+            req->value = value;
             return NVME_SUCCESS;
         case NVME_CMD_KV_RETRIEVE:
             qatomic_inc(&n->pending_reads);

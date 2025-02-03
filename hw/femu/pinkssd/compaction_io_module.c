@@ -38,6 +38,7 @@ static void log_cvt2table(void **data, kv_snode **targets, int n)
     int i;
     for (i = 0; i < n; i++) {
         memcpy(&ptr[data_start], targets[i]->key.key, targets[i]->key.len);
+        memcpy(&ptr[data_start+targets[i]->key.len], targets[i]->value->value, targets[i]->value->length);
         offset_map[i+1] = data_start;
         keylen_map[i+1] = targets[i]->key.len;
         data_start += keylen_map[i+1] + targets[i]->value->length;

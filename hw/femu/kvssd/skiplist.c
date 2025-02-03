@@ -60,9 +60,9 @@ kv_snode *kv_skiplist_insert(kv_skiplist *list, kv_key key, kv_value* value)
         list->val_size -= x->value->length;
         list->val_size += value->length;
         if(x->value) {
-            // TODO: I think you should free(x->value->value) too.
-            FREE(x->value);
+            FREE(x->value->value);
         }
+        FREE(x->value);
         FREE(x->key.key);
         x->key = key;
         x->value=value;

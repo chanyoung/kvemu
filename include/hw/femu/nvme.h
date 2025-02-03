@@ -1016,6 +1016,7 @@ typedef struct NvmeRequest {
 	uint8_t                 key_length;
 	uint8_t                 key_buf[256];
 	uint32_t                value_length;
+    uint8_t                 *value;
     uint8_t                 special_key;
     uint16_t                flash_access_count;
 } NvmeRequest;

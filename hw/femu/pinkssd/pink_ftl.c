@@ -825,6 +825,9 @@ static keyset* find_from_list(kv_key key, kv_skiplist *list) {
         if(target_node) {
             target_set = (keyset *) malloc(sizeof(struct keyset));
             kv_copy_key(&target_set->lpa.k, &target_node->key);
+            target_set->value.length = target_node->value->length;
+            target_set->value.value = g_malloc0(target_set->value.length);
+            memcpy(target_set->value.value, target_node->value->value, target_set->value.length);
             target_set->ppa.ppa = UNMAPPED_PPA;
         }
     }
@@ -869,6 +872,8 @@ static uint64_t ssd_retrieve(struct ssd *ssd, NvmeRequest *req)
     qemu_mutex_lock(&ssd->memtable_mu);
     found = find_from_list(k, pink_lsm->memtable);
     if (found) {
+        req->value_length = found->value.length;
+        req->value = (uint8_t *) found->value.value;
         FREE(found->lpa.k.key);
         FREE(found);
         FREE(k.key);
@@ -881,6 +886,8 @@ static uint64_t ssd_retrieve(struct ssd *ssd, NvmeRequest *req)
     for (int z = 0; z < pink_lsm->temp_n; z++) {
         found = find_from_list(k, pink_lsm->temptable[z]);
         if (found) {
+            req->value_length = found->value.length;
+            req->value = (uint8_t *) found->value.value;
             FREE(found->lpa.k.key);
             FREE(found);
             FREE(k.key);
@@ -918,6 +925,12 @@ retry:
             kv_assert(strncmp(
                         pg->data + ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1],
                         found->lpa.k.key, found->lpa.k.len) == 0);
+            found->value.length = ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+2] - ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1] - found->lpa.k.len;
+            found->value.value = (char *) malloc(found->value.length * sizeof(char));
+            memcpy(found->value.value, pg->data + ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1] + found->lpa.k.len, found->value.length);
+            req->value_length = found->value.length;
+            req->value = (uint8_t *) found->value.value;
+            FREE(found->lpa.k.key);
             FREE(found);
             FREE(k.key);
             req->flash_access_count++;
@@ -980,6 +993,12 @@ retry:
             kv_assert(strncmp(
                         pg->data + ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1],
                         found->lpa.k.key, found->lpa.k.len) == 0);
+            found->value.length = ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+2] - ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1] - found->lpa.k.len;
+            found->value.value = (char *) malloc(found->value.length * sizeof(char));
+            memcpy(found->value.value, pg->data + ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1] + found->lpa.k.len, found->value.length);
+            req->value_length = found->value.length;
+            req->value = (uint8_t *) found->value.value;
+            FREE(found->lpa.k.key);
             FREE(found);
             FREE(k.key);
             req->flash_access_count++;
@@ -1036,6 +1055,12 @@ retry:
             kv_assert(strncmp(
                         pg->data + ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1],
                         found->lpa.k.key, found->lpa.k.len) == 0);
+            found->value.length = ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+2] - ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1] - found->lpa.k.len;
+            found->value.value = (char *) malloc(found->value.length * sizeof(char));
+            memcpy(found->value.value, pg->data + ((uint16_t *)pg->data)[found->lpa.line_age.g.in_page_idx+1] + found->lpa.k.len, found->value.length);
+            req->value_length = found->value.length;
+            req->value = (uint8_t *) found->value.value;
+            FREE(found->lpa.k.key);
             FREE(found);
             FREE(k.key);
             req->flash_access_count++;
@@ -1077,7 +1102,7 @@ static uint64_t ssd_store(struct ssd *ssd, NvmeRequest *req)
 
     v = g_malloc0(sizeof(kv_value));
     v->length = req->value_length;
-    v->value = NULL;
+    v->value = (char *) req->value;
 
     //qemu_mutex_lock(&ssd->memtable_mu);
     kv_skiplist_insert(pink_lsm->memtable, k, v);

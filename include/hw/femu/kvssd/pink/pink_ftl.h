@@ -83,6 +83,7 @@ bool pink_should_meta_gc_high(struct ssd *ssd);
 typedef struct keyset {
     struct femu_ppa ppa;
     PINK_KEYAGET lpa;
+    kv_value value;
 } keyset;
 
 typedef struct pink_level {

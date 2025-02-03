@@ -150,14 +150,16 @@ static void gc_data_one_block(struct ssd *ssd, struct femu_ppa ppa)
                 key.key = (char*) calloc(key.len+1, sizeof(char));
                 memcpy(key.key, pg->data + ((uint16_t *)pg->data)[i+1], key.len);
 
-                kv_value *dummy = (kv_value*) calloc(1, sizeof(kv_value));
-                dummy->length = ((uint16_t *)pg->data)[i+2] - ((uint16_t *)pg->data)[i+1] - key.len;
+                kv_value *value = (kv_value*) calloc(1, sizeof(kv_value));
+                value->length = ((uint16_t *)pg->data)[i+2] - ((uint16_t *)pg->data)[i+1] - key.len;
+                value->value = (char *) calloc(value->length, sizeof(char));
+                memcpy(value->value, pg->data + ((uint16_t *)pg->data)[i+1] + key.len, value->length);
 
                 // Give our m allocated key to skiplist.
                 // No need to free that.
                 //compaction_check(ssd);
                 qemu_mutex_lock(&ssd->memtable_mu);
-                kv_skiplist_insert(pink_lsm->memtable, key, dummy);
+                kv_skiplist_insert(pink_lsm->memtable, key, value);
                 qemu_mutex_unlock(&ssd->memtable_mu);
             } else {
                 gc_erased++;

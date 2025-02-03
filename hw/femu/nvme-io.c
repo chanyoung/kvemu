@@ -193,6 +193,16 @@ static void nvme_process_cq_cpl(void *arg, int index_poller)
     }
 
     while ((req = pqueue_peek(pq))) {
+        if ((req->cmd_opcode == NVME_CMD_KV_RETRIEVE) && req->value) {
+            uint64_t prp1, prp2;
+            int status;
+            prp1 = le64_to_cpu(req->cmd.dptr.prp1);
+            prp2 = le64_to_cpu(req->cmd.dptr.prp2);
+            status = dma_read_prp(n, req->value, req->value_length, prp1, prp2);
+            assert(status == NVME_SUCCESS);
+            free(req->value);
+            req->value = NULL;
+        }
         now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
         if (now < req->expire_time) {
             break;
